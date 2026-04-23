@@ -1,0 +1,116 @@
+type Query {
+  me: User
+  myStack: UserStackProfile
+  recommendations(intent: Intent, limit: Int): RecommendationFeed!
+  repo(id: ID!): Repository
+}
+
+type Mutation {
+  setIntent(intent: Intent!): User!
+  recordFeedback(input: FeedbackInput!): FeedbackResult!
+  refreshRecommendations: RecommendationFeed!
+}
+
+type User {
+  id: ID!
+  githubLogin: String!
+  githubName: String
+  githubAvatar: String
+  email: String
+  stackProfile: UserStackProfile
+  createdAt: String!
+}
+
+type UserStackProfile {
+  primaryLanguages: [LanguageWeight!]!
+  frameworks: [FrameworkEntry!]!
+  domains: [String!]!
+  activityPattern: ActivityPattern
+  intent: Intent
+  totalRepos: Int!
+  totalStarsGiven: Int!
+  lastAnalyzedAt: String
+}
+
+type LanguageWeight {
+  name: String!
+  weightPct: Float!
+}
+
+type FrameworkEntry {
+  name: String!
+  source: String!
+  confidence: Float!
+}
+
+type RecommendationFeed {
+  items: [RecommendationItem!]!
+  sessionId: ID!
+  generatedAt: String!
+  coldStart: Boolean!
+}
+
+type RecommendationItem {
+  id: ID!
+  rank: Int!
+  matchScore: Float!
+  explanations: [Explanation!]!
+  repo: Repository!
+}
+
+type Explanation {
+  reason: String!
+  signal: String!
+  weight: Float!
+}
+
+type Repository {
+  id: ID!
+  fullName: String!
+  name: String!
+  description: String
+  htmlUrl: String!
+  topics: [String!]!
+  primaryLanguage: String
+  stars: Int!
+  forks: Int!
+  openIssues: Int!
+  goodFirstIssues: Int!
+  healthScore: Float!
+  hasContributing: Boolean!
+  lastPushedAt: String
+  license: String
+  homepage: String
+}
+
+type FeedbackResult {
+  success: Boolean!
+  embeddingUpdated: Boolean!
+}
+
+input FeedbackInput {
+  repoId: ID!
+  sessionId: ID!
+  signal: FeedbackSignal!
+  rankPosition: Int!
+}
+
+enum Intent {
+  CONTRIBUTOR
+  LEARNER
+  BUILDER
+}
+
+enum ActivityPattern {
+  BUILDER
+  CONTRIBUTOR
+  LEARNER
+}
+
+enum FeedbackSignal {
+  LIKE
+  DISLIKE
+  SKIP
+  CLICK
+  STAR
+}

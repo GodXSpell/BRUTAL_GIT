@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL,GRAD,opsz@400,0,0,24&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-on-background min-h-screen flex flex-col font-body-md;
+  }
+}
+
+@layer utilities {
+  .brutal-shadow-level-1 {
+    box-shadow: 2px 2px 0px 0px rgba(255,255,255,1);
+  }
+  .brutal-shadow-level-2 {
+    box-shadow: 4px 4px 0px 0px rgba(255,255,255,1);
+  }
+  .brutal-shadow-level-3 {
+    box-shadow: 8px 8px 0px 0px rgba(255,255,255,1);
+  }
+  
+  .brutal-button-interactive:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  
+  .brutal-border {
+    border: 2px solid white;
+  }
+  
+  .material-symbols-outlined {
+    font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  }
+}

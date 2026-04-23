@@ -1,0 +1,95 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: user-profile-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/stackmatch
+    username: stackmatch
+    password: stackmatch_secret
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID:placeholder-client-id}
+            client-secret: ${GITHUB_CLIENT_SECRET:placeholder-client-secret}
+            scope: read:user,user:email,public_repo
+            redirect-uri: "{baseUrl}/oauth2/callback/{registrationId}"
+        provider:
+          github:
+            authorization-uri: https://github.com/login/oauth/authorize
+            token-uri: https://github.com/login/oauth/access_token
+            user-info-uri: https://api.github.com/user
+            user-name-attribute: login
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+      timeout: 2000ms
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+    consumer:
+      group-id: user-profile-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:your-256-bit-secret-must-be-very-long-and-secure-at-least-32-chars}
+    expiration-ms: 86400000   # 24 hours
+  github:
+    api-base: https://api.github.com
+    rate-limit-buffer: 100
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  cache:
+    github-analysis-ttl: 3600
+    recommendations-ttl: 300
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+otel:
+  exporter:
+    otlp:
+      endpoint: http://${OTEL_HOST:otel-collector}:4317
+  traces:
+    sampler: always_on
