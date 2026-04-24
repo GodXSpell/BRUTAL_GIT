@@ -1,0 +1,35 @@
+meta {
+  name: Get Recommendations
+  type: http
+  seq: 1
+}
+get {
+  url: {{base_url}}/api/v1/recommendations
+}
+headers {
+  Authorization: Bearer {{jwt_token}}
+}
+params:query {
+  intent: CONTRIBUTOR
+  limit: 10
+}
+assert {
+  res.status: eq 200
+  res.body.items: isDefined
+  res.body.sessionId: isDefined
+  res.body.items[0].repo: isDefined
+  res.body.items[0].matchScore: isDefined
+  res.body.items[0].explanations: isDefined
+}
+script:post-response {
+  bru.setEnvVar("session_id", res.body.sessionId);
+  if (res.body.items.length > 0) {
+    bru.setEnvVar("repo_id", res.body.items[0].repo.id);
+  }
+}
+docs {
+  This is the main endpoint.
+  If items array is empty, ingestion pipeline hasnt run yet.
+  Run: docker exec -it stackmatch-ingestion python main.py
+  Then retry this request.
+}\n

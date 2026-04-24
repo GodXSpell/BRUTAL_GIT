@@ -1,0 +1,18 @@
+meta {
+  name: Rec Engine Prometheus Metrics
+  type: http
+  seq: 2
+}
+get {
+  url: {{rec_engine_url}}/metrics
+}
+assert {
+  res.status: eq 200
+}
+docs {
+  Should return Prometheus format metrics.
+  Look for:
+  - recommendation_requests_total
+  - recommendation_latency_seconds
+  - retrieval_recall_at_k
+}\n

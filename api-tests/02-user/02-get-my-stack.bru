@@ -1,0 +1,23 @@
+meta {
+  name: Get My Stack Profile
+  type: http
+  seq: 2
+}
+get {
+  url: {{base_url}}/api/v1/me/stack
+}
+headers {
+  Authorization: Bearer {{jwt_token}}
+}
+assert {
+  res.status: eq 200
+  res.body.primaryLanguages: isDefined
+  res.body.frameworks: isDefined
+  res.body.domains: isDefined
+  res.body.activityPattern: isDefined
+}
+docs {
+  Should return analyzed GitHub stack.
+  primaryLanguages should show your top languages with weightPct.
+  frameworks should show detected frameworks from your repos.
+}\n

@@ -1,0 +1,21 @@
+meta {
+  name: Get Current User
+  type: http
+  seq: 1
+}
+get {
+  url: {{base_url}}/api/v1/me
+}
+headers {
+  Authorization: Bearer {{jwt_token}}
+  Content-Type: application/json
+}
+assert {
+  res.status: eq 200
+  res.body.id: isDefined
+  res.body.githubLogin: isDefined
+  res.body.githubAvatar: isDefined
+}
+script:post-response {
+  bru.setEnvVar("user_id", res.body.id);
+}\n

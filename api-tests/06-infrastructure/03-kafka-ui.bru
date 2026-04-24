@@ -1,0 +1,11 @@
+meta {
+  name: Kafka UI Check
+  type: http
+  seq: 3
+}
+get {
+  url: {{kafka_ui_url}}/api/clusters
+}
+assert {
+  res.status: eq 200
+}\n

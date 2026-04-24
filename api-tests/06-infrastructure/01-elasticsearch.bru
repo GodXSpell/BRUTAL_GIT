@@ -1,0 +1,12 @@
+meta {
+  name: Elasticsearch Health
+  type: http
+  seq: 1
+}
+get {
+  url: {{es_url}}/_cluster/health
+}
+assert {
+  res.status: eq 200
+  res.body.status: in ["green", "yellow"]
+}\n

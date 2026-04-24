@@ -1,0 +1,24 @@
+meta {
+  name: Test All Three Intents
+  type: http
+  seq: 2
+}
+get {
+  url: {{base_url}}/api/v1/recommendations
+}
+headers {
+  Authorization: Bearer {{jwt_token}}
+}
+params:query {
+  intent: LEARNER
+  limit: 5
+}
+assert {
+  res.status: eq 200
+  res.body.items: isDefined
+}
+docs {
+  Run this 3 times changing intent to:
+  CONTRIBUTOR, LEARNER, BUILDER
+  Results should be different for each intent.
+}\n

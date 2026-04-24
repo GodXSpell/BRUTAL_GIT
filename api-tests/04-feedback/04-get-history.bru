@@ -1,0 +1,14 @@
+meta {
+  name: Get Feedback History
+  type: http
+  seq: 4
+}
+get {
+  url: {{feedback_url}}/api/v1/feedback/history
+}
+headers {
+  Authorization: Bearer {{jwt_token}}
+}
+assert {
+  res.status: eq 200
+}\n

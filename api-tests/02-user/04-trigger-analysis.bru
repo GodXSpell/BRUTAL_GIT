@@ -1,0 +1,19 @@
+meta {
+  name: Trigger GitHub Re-analysis
+  type: http
+  seq: 4
+}
+post {
+  url: {{base_url}}/api/v1/me/analyze
+}
+headers {
+  Authorization: Bearer {{jwt_token}}
+}
+assert {
+  res.status: in [200, 202]
+}
+docs {
+  Returns 202 Accepted immediately.
+  Analysis runs async in background.
+  Wait 30 seconds then call get-my-stack to see updated results.
+}\n

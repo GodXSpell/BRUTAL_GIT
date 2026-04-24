@@ -1,0 +1,11 @@
+meta {
+  name: Trigger Embedding Update (5 signals needed)
+  type: http
+  seq: 3
+}
+docs {
+  Send 5 feedback signals total (mix of like/dislike/skip)
+  Then check Kafka UI at http://localhost:8090
+  Look for messages in: feedback.embedding.update topic
+  Then re-run get-recommendations and verify results changed.
+}\n

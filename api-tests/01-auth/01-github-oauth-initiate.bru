@@ -1,0 +1,16 @@
+meta {
+  name: GitHub OAuth Initiate
+  type: http
+  seq: 1
+}
+get {
+  url: {{user_profile_url}}/oauth2/authorization/github
+}
+assert {
+  res.status: in [200, 302, 301]
+}
+docs {
+  After hitting this, copy the redirect URL and open in browser manually.
+  GitHub will redirect to your callback URL with a ?code= parameter.
+  That code is used in the next request.
+}\n

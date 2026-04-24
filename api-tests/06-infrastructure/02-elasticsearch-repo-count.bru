@@ -1,0 +1,16 @@
+meta {
+  name: Elasticsearch Repo Count
+  type: http
+  seq: 2
+}
+get {
+  url: {{es_url}}/stackmatch-repos/_count
+}
+assert {
+  res.status: eq 200
+  res.body.count: gt 0
+}
+docs {
+  If count is 0, ingestion hasnt run.
+  Run ingestion pipeline first.
+}\n
