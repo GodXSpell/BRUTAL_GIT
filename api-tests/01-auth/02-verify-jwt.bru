@@ -3,18 +3,28 @@ meta {
   type: http
   seq: 2
 }
+
 get {
   url: {{user_profile_url}}/api/v1/me
+  body: none
+  auth: none
 }
+
 headers {
   Authorization: Bearer {{jwt_token}}
 }
+
+vars:pre-request {
+  user_profile_url: http://localhost:8081
+}
+
 assert {
   res.status: eq 200
   res.body.githubLogin: isDefined
   res.body.id: isDefined
 }
+
 docs {
   Set jwt_token in environment after completing OAuth in browser.
   JWT is returned in the OAuth callback response.
-}\n
+}

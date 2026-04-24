@@ -17,13 +17,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @GetMapping("/oauth2/callback/github")
-    public ResponseEntity<AuthResponse> githubCallback(
-            @AuthenticationPrincipal OAuth2User oAuth2User) {
-        var response = authService.handleOAuthCallback(oAuth2User);
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping("/api/v1/me/intent")
     public ResponseEntity<Void> setIntent(
             @AuthenticationPrincipal String userId,

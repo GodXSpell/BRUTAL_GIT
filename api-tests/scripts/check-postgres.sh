@@ -28,4 +28,4 @@ docker exec -it stackmatch-postgres psql -U stackmatch -d stackmatch \
 
 echo "=== USER EMBEDDINGS ==="
 docker exec -it stackmatch-postgres psql -U stackmatch -d stackmatch \
-  -c "SELECT user_id, version, feedback_count, updated_at FROM user_embeddings LIMIT 5;"\n
+  -c "SELECT user_id, version, feedback_count, updated_at FROM user_embeddings LIMIT 5;"

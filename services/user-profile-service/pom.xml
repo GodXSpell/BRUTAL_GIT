@@ -89,11 +89,11 @@
         </dependency>
 
         <!-- OpenTelemetry -->
-        <dependency>
+        <!-- <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-spring-boot-starter</artifactId>
             <version>2.1.0-alpha</version>
-        </dependency>
+        </dependency> -->
 
         <!-- Utilities -->
         <dependency>

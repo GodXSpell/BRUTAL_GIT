@@ -75,18 +75,7 @@ export function useRecommendations(intent: Intent | null) {
     try {
       const token = localStorage.getItem("stackmatch_token");
       const userId = localStorage.getItem("stackmatch_user_id");
-      const githubUserStr = localStorage.getItem("github_user");
-      
-      // If we don't have token/userId, but we have githubUser logged in via oauth fallback
-      if ((!token || !userId) && githubUserStr) {
-        const githubUser = JSON.parse(githubUserStr);
-        setRecommendations(generateMockRecommendations(`${githubUser.login}`));
-        setSessionId("mock_session_" + Date.now());
-        setLoading(false);
-        setError(null);
-        return;
-      }
-      
+
       if (!token || !userId) {
         setError("Not authenticated");
         setLoading(false);
@@ -100,15 +89,7 @@ export function useRecommendations(intent: Intent | null) {
       setRecommendations(data.items);
       setSessionId(data.sessionId);
     } catch (err: any) {
-      const githubUserStr = localStorage.getItem("github_user");
-      if (githubUserStr) {
-        const githubUser = JSON.parse(githubUserStr);
-        setRecommendations(generateMockRecommendations(`${githubUser.login}`));
-        setSessionId("mock_session_" + Date.now());
-        setError(null);
-      } else {
-        setError(err.message);
-      }
+      setError(err.message);
     } finally {
       setLoading(false);
     }

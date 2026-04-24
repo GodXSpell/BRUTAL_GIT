@@ -1,5 +1,6 @@
 package dev.stackmatch.userprofile.security;
 
+import dev.stackmatch.userprofile.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -28,12 +29,12 @@ public class SecurityConfig {
     private String frontendUrl;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthService authService) throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
@@ -44,7 +45,12 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/oauth2/authorize/github")
-                        .defaultSuccessUrl("/oauth2/callback/github", true)
+                        .successHandler((request, response, authentication) -> {
+                            var oAuth2User = (org.springframework.security.oauth2.core.user.OAuth2User) authentication.getPrincipal();
+                            var authResponse = authService.handleOAuthCallback(oAuth2User);
+                            String redirectUrl = frontendUrl + "/oauth/callback?token=" + authResponse.token() + "&userId=" + authResponse.userId();
+                            response.sendRedirect(redirectUrl);
+                        })
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

@@ -3,14 +3,23 @@ meta {
   type: http
   seq: 1
 }
+
 get {
   url: {{user_profile_url}}/oauth2/authorization/github
+  body: none
+  auth: none
 }
+
+vars:pre-request {
+  user_profile_url: http://localhost:9200
+}
+
 assert {
   res.status: in [200, 302, 301]
 }
+
 docs {
   After hitting this, copy the redirect URL and open in browser manually.
   GitHub will redirect to your callback URL with a ?code= parameter.
   That code is used in the next request.
-}\n
+}

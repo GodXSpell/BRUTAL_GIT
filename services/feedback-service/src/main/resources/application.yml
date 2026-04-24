@@ -39,3 +39,7 @@ management:
     export:
       prometheus:
         enabled: true
+
+otel:
+  sdk:
+    disabled: true

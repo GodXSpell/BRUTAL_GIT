@@ -36,7 +36,7 @@ spring:
             client-id: ${GITHUB_CLIENT_ID:placeholder-client-id}
             client-secret: ${GITHUB_CLIENT_SECRET:placeholder-client-secret}
             scope: read:user,user:email,public_repo
-            redirect-uri: "{baseUrl}/oauth2/callback/{registrationId}"
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
         provider:
           github:
             authorization-uri: https://github.com/login/oauth/authorize
@@ -88,8 +88,5 @@ management:
         enabled: true
 
 otel:
-  exporter:
-    otlp:
-      endpoint: http://${OTEL_HOST:otel-collector}:4317
-  traces:
-    sampler: always_on
+  sdk:
+    disabled: true

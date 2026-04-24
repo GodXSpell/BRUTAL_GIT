@@ -5,6 +5,24 @@ import structlog
 from typing import List, Tuple
 from elasticsearch import AsyncElasticsearch
 from ingestion.github_crawler import RawRepo
+from datetime import datetime, timezone
+
+def parse_dt(s):
+    if s is None:
+        return None
+    if isinstance(s, datetime):
+        return s
+    try:
+        return datetime.fromisoformat(s.replace('Z', '+00:00'))
+    except Exception:
+        return None
+
+def to_pgvector(embedding) -> str:
+    if embedding is None:
+        return None
+    if hasattr(embedding, 'tolist'):
+        embedding = embedding.tolist()
+    return '[' + ','.join(str(x) for x in embedding) + ']'
 
 log = structlog.get_logger()
 
@@ -67,7 +85,7 @@ class RepoIndexer:
             for repo, embedding in repo_embedding_pairs:
                 try:
                     # Upsert to Postgres
-                    embedding_list = embedding.tolist()
+                    embedding_str = to_pgvector(embedding)
                     await conn.execute(
                         """
                         INSERT INTO repositories (
@@ -105,9 +123,9 @@ class RepoIndexer:
                         repo.primary_language, repo.stars, repo.forks,
                         repo.open_issues, repo.watchers, repo.license,
                         repo.is_archived, repo.is_fork,
-                        repo.last_pushed_at, repo.created_at_github,
+                        parse_dt(repo.last_pushed_at), parse_dt(repo.created_at_github),
                         repo.good_first_issues, repo.has_contributing,
-                        repo.readme_summary, repo.health_score, embedding_list,
+                        repo.readme_summary, repo.health_score, embedding_str,
                     )
 
                     # Index to Elasticsearch

@@ -3,14 +3,23 @@ meta {
   type: http
   seq: 2
 }
+
 get {
   url: {{es_url}}/stackmatch-repos/_count
+  body: none
+  auth: none
 }
+
+vars:pre-request {
+  es_url: http://localhost:9200
+}
+
 assert {
   res.status: eq 200
   res.body.count: gt 0
 }
+
 docs {
   If count is 0, ingestion hasnt run.
   Run ingestion pipeline first.
-}\n
+}

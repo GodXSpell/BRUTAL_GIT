@@ -3,10 +3,18 @@ meta {
   type: http
   seq: 1
 }
+
 get {
   url: {{es_url}}/_cluster/health
+  body: none
+  auth: none
 }
+
+vars:pre-request {
+  es_url: http://localhost:9200
+}
+
 assert {
   res.status: eq 200
   res.body.status: in ["green", "yellow"]
-}\n
+}

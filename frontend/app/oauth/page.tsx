@@ -8,20 +8,9 @@ export default function OAuthPage() {
   const [username, setUsername] = useState("");
   const router = useRouter();
 
-  const handleAuthorize = async () => {
-    if (!username) return;
-    try {
-      const res = await fetch(`https://api.github.com/users/${username}`);
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem("github_user", JSON.stringify(data));
-        router.push("/dashboard");
-      } else {
-        alert("User not found!");
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const handleAuthorize = () => {
+    // Redirect to backend OAuth2 initiation endpoint
+    window.location.href = "http://localhost:8080/oauth2/authorization/github";
   };
 
   const handleCancel = () => {
