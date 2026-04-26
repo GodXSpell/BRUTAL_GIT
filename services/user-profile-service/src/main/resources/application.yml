@@ -36,7 +36,7 @@ spring:
             client-id: ${GITHUB_CLIENT_ID:placeholder-client-id}
             client-secret: ${GITHUB_CLIENT_SECRET:placeholder-client-secret}
             scope: read:user,user:email,public_repo
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            redirect-uri: "http://localhost:8081/oauth2/callback/github"
         provider:
           github:
             authorization-uri: https://github.com/login/oauth/authorize

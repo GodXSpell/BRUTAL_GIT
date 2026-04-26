@@ -8,11 +8,6 @@ export default function OAuthPage() {
   const [username, setUsername] = useState("");
   const router = useRouter();
 
-  const handleAuthorize = () => {
-    // Redirect to backend OAuth2 initiation endpoint
-    window.location.href = "http://localhost:8080/oauth2/authorization/github";
-  };
-
   const handleCancel = () => {
     router.push("/");
   };
@@ -115,11 +110,11 @@ export default function OAuthPage() {
         </div>
         {/*  Action Buttons  */}
         <div className="flex flex-col sm:flex-row gap-md mt-md pt-md border-t-2 border-white">
-          <button 
-            onClick={handleAuthorize}
-            className="flex-1 bg-[#238636] text-white font-label-sm text-label-sm uppercase py-4 border-2 border-black brutal-shadow brutal-shadow-interactive transition-none text-center">
+          <a
+            href="http://localhost:8080/oauth2/authorization/github"
+            className="flex-1 bg-[#238636] flex items-center justify-center text-white font-label-sm text-label-sm uppercase py-4 border-2 border-black brutal-shadow brutal-shadow-interactive transition-none text-center">
             Authorize & Login
-          </button>
+          </a>
           <button 
             onClick={handleCancel}
             className="flex-1 bg-zinc-800 text-white font-label-sm text-label-sm uppercase py-4 border-2 border-white brutal-shadow brutal-shadow-interactive transition-none text-center hover:bg-zinc-700">

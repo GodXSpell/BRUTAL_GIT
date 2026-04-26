@@ -7,7 +7,7 @@ export async function apiGet(path: string, token?: string) {
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 3000); // 3 seconds timeout
+  const id = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
 
   try {
     const res = await fetch(`${API_URL}${path}`, { headers, signal: controller.signal });
