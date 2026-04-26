@@ -1,5 +1,6 @@
 import asyncio
 import time
+import traceback
 import numpy as np
 import structlog
 from typing import List, Optional, Tuple
@@ -99,7 +100,9 @@ class HybridRetriever:
     async def _bm25_retrieve(self, user_stack: dict, intent: str) -> List[Tuple[str, float]]:
         should_clauses = []
 
-        top_langs = [lw.get("name", "") for lw in user_stack.get("primary_languages", [])[:3]]
+        top_langs = [lw.get("name", "") if isinstance(lw, dict) else lw 
+             for lw in user_stack.get("primary_languages", [])[:3]]
+        top_langs = [l for l in top_langs if l]
         for lang in top_langs:
             should_clauses.append({
                 "term": {"primary_language": {"value": lang, "boost": 3.0}}
@@ -144,30 +147,44 @@ class HybridRetriever:
                 "filter": [lang_filter]
             }
         }
-
+        log.info("BM25 starting", top_langs=top_langs, should_count=len(should_clauses))
         try:
             resp = await self.es.search(
                 index="stackmatch-repos",
                 body={"query": query, "size": self.CANDIDATE_POOL_SIZE, "_source": ["github_id"]},
             )
-            return [
-                (str(hit["_source"]["github_id"]), hit["_score"])
+            github_ids = [
+                int(hit["_source"]["github_id"])
                 for hit in resp["hits"]["hits"]
             ]
+            scores = {
+                int(hit["_source"]["github_id"]): hit["_score"]
+                for hit in resp["hits"]["hits"]
+            }
+            if not github_ids:
+                return []
+            # Convert github_ids to UUIDs
+            async with self.db_pool.acquire() as conn:
+                rows = await conn.fetch(
+                    "SELECT id::text, github_id FROM repositories WHERE github_id = ANY($1::bigint[])",
+                    github_ids
+                )
+                return [(row["id"], scores[row["github_id"]]) for row in rows]
         except Exception as e:
-            log.error("BM25 retrieval failed", error=str(e))
+            log.error("BM25 retrieval failed", error=str(e), error_type=type(e).__name__)
+            log.error("BM25 traceback", tb=traceback.format_exc())
             return []
 
     async def _vector_retrieve(self, user_embedding: np.ndarray, primary_languages: list) -> List[Tuple[str, float]]:
-        top_langs = [lw.get("name", "") for lw in primary_languages[:4]]
-        embedding_list = user_embedding.tolist()
-
-        lang_filter = ""
-        params = [embedding_list]
-
+        top_langs = [lw.get("name", "") if isinstance(lw, dict) else lw for lw in primary_languages[:4]]
+        top_langs = [l for l in top_langs if l]
+        embedding_str = '[' + ','.join(str(x) for x in user_embedding.tolist()) + ']'
         if top_langs:
-            lang_filter = f"AND primary_language = ANY($2::text[])"
-            params.append(top_langs)
+            lang_filter = "AND primary_language = ANY($2::text[])"
+            params = [embedding_str, top_langs]
+        else:
+            lang_filter = ""
+            params = [embedding_str]
 
         query = f"""
             SELECT
@@ -186,12 +203,16 @@ class HybridRetriever:
 
         try:
             async with self.db_pool.acquire() as conn:
-                rows = await conn.fetch(query, *params)
+                if top_langs:
+                    rows = await conn.fetch(query, params[0], params[1])
+                else:
+                    rows = await conn.fetch(query, params[0])
             return [(row["id"], float(row["cosine_similarity"])) for row in rows]
         except Exception as e:
-            log.error("Vector retrieval failed", error=str(e))
+            log.error("Vector retrieval failed", error=str(e), error_type=type(e).__name__)
+            log.error("Vector traceback", tb=traceback.format_exc())
             return []
-
+        
     def _reciprocal_rank_fusion(
         self,
         bm25_results: List[Tuple[str, float]],

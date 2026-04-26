@@ -3,6 +3,7 @@ import json
 import numpy as np
 import structlog
 from datetime import datetime, timezone
+from sentence_transformers import SentenceTransformer    
 from fastapi import APIRouter, Query, HTTPException
 from app.db.connection import get_db_pool
 from app.search.elasticsearch_client import get_es
@@ -50,10 +51,35 @@ async def get_recommendations(
     if stack_row is None:
         raise HTTPException(status_code=404, detail="User stack profile not found. Trigger analysis first.")
 
+    def parse_jsonb(val):
+        if val is None:
+            return []
+        if isinstance(val, str):
+            try:
+                return json.loads(val)
+            except:
+                return []
+        return val  # already a list/dict from asyncpg
+
+    raw_langs = parse_jsonb(stack_row["primary_languages"])
+    raw_frameworks = parse_jsonb(stack_row["frameworks"])
+    raw_domains = parse_jsonb(stack_row["domains"])
+
+    # Normalize to dicts
+    if raw_langs and isinstance(raw_langs[0], str):
+        primary_languages = [{"name": l, "weightPct": 1.0} for l in raw_langs]
+    else:
+        primary_languages = raw_langs
+
+    if raw_frameworks and isinstance(raw_frameworks[0], str):
+        frameworks = [{"name": f, "source": "github", "confidence": 1.0} for f in raw_frameworks]
+    else:
+        frameworks = raw_frameworks
+
     user_stack = {
-        "primary_languages": stack_row["primary_languages"] or [],
-        "frameworks": stack_row["frameworks"] or [],
-        "domains": stack_row["domains"] or [],
+        "primary_languages": primary_languages,
+        "frameworks": frameworks,
+        "domains": raw_domains if isinstance(raw_domains, list) else [],
         "activity_pattern": stack_row["activity_pattern"],
         "intent": stack_row["intent"],
     }
@@ -63,8 +89,11 @@ async def get_recommendations(
         user_embedding = np.random.randn(128).astype(np.float32)
         user_embedding = user_embedding / (np.linalg.norm(user_embedding) + 1e-8)
     else:
-        user_embedding = np.array(emb_row["embedding"], dtype=np.float32)
-
+        emb_val = emb_row["embedding"]
+        if isinstance(emb_val, str):
+            emb_val = json.loads(emb_val)
+        user_embedding = np.array(emb_val, dtype=np.float32)
+    
     # 3. Fetch previously shown repo IDs to exclude
     async with db_pool.acquire() as conn:
         prev_rows = await conn.fetch(
@@ -73,7 +102,6 @@ async def get_recommendations(
             FROM recommendation_items ri
             JOIN recommendation_sessions rs ON ri.session_id = rs.id
             WHERE rs.user_id = $1
-            ORDER BY ri.repo_id
             LIMIT 200
             """,
             uuid.UUID(userId)
@@ -170,29 +198,33 @@ async def compute_user_embedding(userId: str = Query(...)):
     if row is None:
         raise HTTPException(status_code=404, detail="Stack profile not found")
 
-    # Build text representation for embedding
+    # Build text — handle both string and dict formats
     parts = []
     for lw in (row["primary_languages"] or []):
-        parts.append(lw.get("name", ""))
+        parts.append(lw if isinstance(lw, str) else lw.get("name", ""))
     for fw in (row["frameworks"] or []):
-        parts.append(fw.get("name", ""))
+        parts.append(fw if isinstance(fw, str) else fw.get("name", ""))
     parts.extend(row["domains"] or [])
-    stack_text = " ".join(parts)
+    stack_text = " ".join(filter(None, parts))
 
-    # Import embedding service
-    from ingestion.embedding_service import EmbeddingService
-    embedder = EmbeddingService()
-    embedding = embedder.compute_user_embedding(stack_text)
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    emb_384 = model.encode([stack_text], normalize_embeddings=True)[0]
 
-    # Store
+    # Project to 128-dim
+    np.random.seed(42)
+    projection = np.random.randn(384, 128)
+    projection, _ = np.linalg.qr(projection)
+    emb_128 = emb_384 @ projection
+    emb_128 = emb_128 / (np.linalg.norm(emb_128) + 1e-8)
+
+    # Convert to pgvector string format
+    embedding_str = '[' + ','.join(str(x) for x in emb_128.tolist()) + ']'
+
     async with db_pool.acquire() as conn:
         await conn.execute(
-            """
-            UPDATE user_stack_profiles SET profile_embedding = $1::vector WHERE user_id = $2
-            """,
-            embedding.tolist(), uuid.UUID(userId)
+            "UPDATE user_stack_profiles SET profile_embedding = $1::vector WHERE user_id = $2",
+            embedding_str, uuid.UUID(userId)
         )
-
         await conn.execute(
             """
             INSERT INTO user_embeddings (user_id, embedding, version, feedback_count, updated_at)
@@ -200,7 +232,7 @@ async def compute_user_embedding(userId: str = Query(...)):
             ON CONFLICT (user_id) DO UPDATE SET
                 embedding = EXCLUDED.embedding, updated_at = NOW()
             """,
-            uuid.UUID(userId), embedding.tolist()
+            uuid.UUID(userId), embedding_str
         )
 
     return {"status": "ok", "userId": userId}
