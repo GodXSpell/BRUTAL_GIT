@@ -139,11 +139,11 @@ class HybridRetriever:
             "bool": {
                 "must": [
                     {"term": {"is_archived": False}},
-                    {"range": {"stars": {"gte": 50}}},
-                    {"range": {"health_score": {"gte": 0.3}}},
+                    {"range": {"stars": {"gte": 1}}},               # relaxed from 50 to 1 
+                    {"range": {"health_score": {"gte": 0.0}}},      # relaxed from 0.3 to 0.0
                 ],
                 "should": should_clauses,
-                "minimum_should_match": 1,
+                "minimum_should_match": 1 if should_clauses else 0, # catch empty conditions
                 "filter": [lang_filter]
             }
         }
@@ -194,8 +194,8 @@ class HybridRetriever:
             WHERE
                 repo_embedding IS NOT NULL
                 AND is_archived = false
-                AND health_score >= 0.3
-                AND stars >= 50
+                AND health_score >= 0.0      -- Relax from 0.3 to 0.0
+                AND stars >= 1               -- Relax from 50 to 1
                 {lang_filter}
             ORDER BY repo_embedding <=> $1::vector
             LIMIT {self.CANDIDATE_POOL_SIZE}

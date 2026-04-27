@@ -3,6 +3,7 @@ package dev.stackmatch.userprofile.controller;
 import dev.stackmatch.userprofile.dto.AuthResponse;
 import dev.stackmatch.userprofile.dto.IntentRequest;
 import dev.stackmatch.userprofile.dto.UserProfileResponse;
+import dev.stackmatch.userprofile.dto.UserProfileResponse.StackProfileDto;
 import dev.stackmatch.userprofile.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +27,9 @@ public class AuthController {
     }
 
     @GetMapping("/api/v1/me/stack")
-    public ResponseEntity<UserProfileResponse> getMyStack(
+    public ResponseEntity<StackProfileDto> getMyStack(
             @AuthenticationPrincipal String userId) {
-        return ResponseEntity.ok(authService.getUserStackProfile(userId));
+        return ResponseEntity.ok(authService.getUserStackProfile(userId).stackProfile());
     }
 
     @PostMapping("/api/v1/me/analyze")

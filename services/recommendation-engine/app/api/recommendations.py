@@ -102,7 +102,8 @@ async def get_recommendations(
             FROM recommendation_items ri
             JOIN recommendation_sessions rs ON ri.session_id = rs.id
             WHERE rs.user_id = $1
-            LIMIT 200
+            AND rs.created_at > NOW() - INTERVAL '2 hours'
+            LIMIT 50
             """,
             uuid.UUID(userId)
         )

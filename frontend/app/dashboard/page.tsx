@@ -11,7 +11,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
-  const [intent, setIntent] = useState<Intent | null>(null);
+  const [intent, setIntent] = useState<Intent>("BUILDER");
   const { stack: profile } = useUserStack();
   const {
     recommendations,
@@ -35,8 +35,9 @@ export default function Dashboard() {
       })
         .then((r) => r.json())
         .then((user) => {
-          if (user && user.userId) {
-            localStorage.setItem("stackmatch_user_id", user.userId);
+          const userId = user?.id || user?.userId || user?.githubId?.toString();
+          if (userId) {
+            localStorage.setItem("stackmatch_user_id", userId);
           }
         })
         .catch(console.error);

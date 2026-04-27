@@ -61,6 +61,8 @@ function generateMockRecommendations(username: string): RecommendationItem[] {
   ];
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
 export function useRecommendations(intent: Intent | null) {
   const [recommendations, setRecommendations] = useState<RecommendationItem[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
@@ -68,7 +70,6 @@ export function useRecommendations(intent: Intent | null) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchRecommendations = useCallback(async () => {
-    if (!intent) return;
     setLoading(true);
     setError(null);
     try {
@@ -81,31 +82,34 @@ export function useRecommendations(intent: Intent | null) {
 
       // Get userId - from localStorage or fetch from API
       let userId = localStorage.getItem("stackmatch_user_id");
-      if (!userId) {
-        const meRes = await fetch(`http://localhost:8080/api/v1/me`, {
+      if (!userId || userId === "undefined") {
+        const meRes = await fetch(`${API_URL}/api/v1/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const me = await meRes.json();
-        userId = me.id;
+        userId = me.id || me.userId || me.githubId?.toString();
         if (userId) localStorage.setItem("stackmatch_user_id", userId);
       }
 
-      if (!userId) {
+      if (!userId || userId === "undefined") {
         setError("Could not get user ID");
         setLoading(false);
         return;
       }
 
       // First ensure embedding exists
-      await fetch(
-        `http://localhost:8000/api/v1/embeddings/user?userId=${userId}`,
-        { method: "POST" },
-      ).catch(() => {}); // ignore if fails, might already exist
+      await fetch(`${API_URL}/api/v1/embeddings/user?userId=${userId}`, {
+        method: "POST",
+      }).catch(() => {}); // ignore if fails, might already exist
 
-      const data = await fetch(
-        `http://localhost:8000/api/v1/recommendations?userId=${userId}&intent=${intent}&limit=15`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      ).then((r) => r.json());
+      let url = `${API_URL}/api/v1/recommendations?userId=${userId}&limit=50`;
+      if (intent) {
+        url += `&intent=${intent}`;
+      }
+
+      const data = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json());
 
       setRecommendations(data.items || []);
       setSessionId(data.session_id || data.sessionId || "");
