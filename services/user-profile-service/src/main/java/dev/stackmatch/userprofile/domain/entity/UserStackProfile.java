@@ -54,7 +54,7 @@ public class UserStackProfile {
     @Column(name = "total_stars_given")
     private Integer totalStarsGiven;
 
-    @Column(name = "profile_embedding", columnDefinition = "vector(128)")
+    @Transient
     private float[] profileEmbedding;
 
     @Column(name = "last_analyzed_at")

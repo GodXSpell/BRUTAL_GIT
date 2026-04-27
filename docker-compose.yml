@@ -198,7 +198,7 @@ services:
       - DATABASE_URL=postgresql://stackmatch:stackmatch_secret@postgres:5432/stackmatch
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - KAFKA_BOOTSTRAP=kafka:29092
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_TOKEN=${GITHUB_TOKEN_INGESTION}
     depends_on:
       postgres:
         condition: service_healthy

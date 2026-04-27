@@ -22,48 +22,25 @@ export default function Dashboard() {
   } = useRecommendations(intent);
 
   useEffect(() => {
-    // Extract token from URL if present
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-
-    if (token) {
-      localStorage.setItem("stackmatch_token", token);
-
-      // Remove token from URL to keep it clean
-      window.history.replaceState({}, document.title, window.location.pathname);
-
-      // Force a reload or mutate state if necessary so other hooks pickup the token
-      // Window reload is a simple sledgehammer to ensure api wrapper picks up localStorage
-      window.location.reload();
-    }
-  }, []);
-
-  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
     if (token) {
+      // Store token BEFORE removing from URL
       localStorage.setItem("stackmatch_token", token);
-      window.history.replaceState({}, document.title, window.location.pathname);
-
-      // Fetch user profile to get userId and store it
+      // Clean URL without triggering reload
+      window.history.replaceState({}, document.title, "/dashboard");
+      // Fetch user ID and store it
       fetch("http://localhost:8080/api/v1/me", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: "Bearer " + token },
       })
-        .then((res) => res.json())
+        .then((r) => r.json())
         .then((user) => {
-          localStorage.setItem("stackmatch_user_id", user.id);
-          localStorage.setItem(
-            "github_user",
-            JSON.stringify({
-              login: user.githubLogin,
-              avatar_url: user.githubAvatar,
-              name: user.githubName,
-              public_repos: user.totalRepos,
-            }),
-          );
-          window.location.reload();
+          if (user && user.userId) {
+            localStorage.setItem("stackmatch_user_id", user.userId);
+          }
         })
         .catch(console.error);
+      // DO NOT reload - hooks will pick up localStorage naturally
     }
   }, []);
 

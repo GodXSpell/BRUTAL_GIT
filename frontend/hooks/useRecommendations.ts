@@ -71,23 +71,44 @@ export function useRecommendations(intent: Intent | null) {
     if (!intent) return;
     setLoading(true);
     setError(null);
-
     try {
       const token = localStorage.getItem("stackmatch_token");
-      const userId = localStorage.getItem("stackmatch_user_id");
-
-      if (!token || !userId) {
+      if (!token) {
         setError("Not authenticated");
         setLoading(false);
         return;
       }
 
-      const data: RecommendationFeed = await apiGet(
-        `/api/v1/recommendations?userId=${userId}&intent=${intent}&limit=15`,
-        token
-      );
-      setRecommendations(data.items);
-      setSessionId(data.sessionId);
+      // Get userId - from localStorage or fetch from API
+      let userId = localStorage.getItem("stackmatch_user_id");
+      if (!userId) {
+        const meRes = await fetch(`http://localhost:8080/api/v1/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const me = await meRes.json();
+        userId = me.id;
+        if (userId) localStorage.setItem("stackmatch_user_id", userId);
+      }
+
+      if (!userId) {
+        setError("Could not get user ID");
+        setLoading(false);
+        return;
+      }
+
+      // First ensure embedding exists
+      await fetch(
+        `http://localhost:8000/api/v1/embeddings/user?userId=${userId}`,
+        { method: "POST" },
+      ).catch(() => {}); // ignore if fails, might already exist
+
+      const data = await fetch(
+        `http://localhost:8000/api/v1/recommendations?userId=${userId}&intent=${intent}&limit=15`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      ).then((r) => r.json());
+
+      setRecommendations(data.items || []);
+      setSessionId(data.session_id || data.sessionId || "");
     } catch (err: any) {
       setError(err.message);
     } finally {
