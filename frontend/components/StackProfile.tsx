@@ -1,5 +1,5 @@
 import React from 'react';
-import { StackProfile } from "../hooks/useUserStack";
+import { StackProfile } from "@/lib/api";
 
 export function StackProfileComponent({ profile }: { profile: StackProfile }) {
   if (!profile || !profile.primaryLanguages || profile.primaryLanguages.length === 0) {
